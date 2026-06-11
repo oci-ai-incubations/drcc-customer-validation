@@ -40,7 +40,8 @@ oci==2.178.0
 openpyxl==3.1.5
 pyyaml==6.0.2
 jinja2==3.1.4
-weasyprint==62.3
+weasyprint==69.0
+pydyf==0.12.1
 matplotlib==3.10.9
 pytest==8.3.3
 ```
