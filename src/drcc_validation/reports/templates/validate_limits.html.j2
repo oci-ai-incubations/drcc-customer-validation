@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Validate Limits Report</title>
+<style>
+@page { size: Letter landscape; margin: 0.45in; }
+* { box-sizing: border-box; }
+body { color: #24292f; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 10px; line-height: 1.35; margin: 0; }
+.cover { break-after: page; }
+.cover h1 { border-bottom: 1px solid #d0d7de; font-size: 28px; margin: 0 0 14px; padding-bottom: 10px; }
+.toc { columns: 3; column-gap: 28px; font-size: 9px; padding-left: 18px; }
+.toc li { break-inside: avoid; margin: 0 0 4px; }
+.md-file { break-before: page; }
+.file-path { color: #57606a; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; margin-bottom: 6px; }
+h1, h2, h3, h4, h5, h6 { color: #24292f; font-weight: 600; line-height: 1.25; margin: 16px 0 8px; }
+h1 { border-bottom: 1px solid #d0d7de; font-size: 20px; padding-bottom: 6px; }
+h2 { border-bottom: 1px solid #d8dee4; font-size: 15px; padding-bottom: 4px; }
+h3 { font-size: 12px; }
+p { margin: 0 0 8px; }
+a { color: #0969da; text-decoration: none; }
+code { background: rgba(175, 184, 193, 0.2); border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 85%; padding: 0.1em 0.3em; }
+ul { margin: 0 0 8px; padding-left: 18px; }
+li { margin: 0 0 3px; }
+.table-wrap { margin: 8px 0 12px; width: 100%; }
+table { border-collapse: collapse; border-spacing: 0; display: table; font-size: 7.2px; line-height: 1.25; table-layout: auto; width: 100%; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+th, td { border: 1px solid #d0d7de; padding: 3px 5px; text-align: left; vertical-align: top; word-break: break-word; }
+th { background: #f6f8fa; font-weight: 600; }
+tr:nth-child(even) td { background: #f6f8fa; }
+td:nth-child(1), td:nth-child(2), th:nth-child(1), th:nth-child(2) { white-space: nowrap; }
+</style>
+</head>
+<body>
+
+{% macro by_service_table(services) %}
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Service</th><th>Overall Status</th><th>Limits checked</th><th>Exact matches</th>
+<th>Higher</th><th>Lower</th><th>Missing</th><th>Incomplete</th>
+<th>Commands</th><th>Collection</th><th>MD</th><th>JSON</th>
+</tr></thead>
+<tbody>
+{% for s in services %}
+<tr>
+<td><a href="#file-{{ s.service }}">{{ s.service }}</a></td>
+<td>{{ s.overall_status | statusbadge }}</td>
+<td>{{ s.checked }}</td>
+<td>{{ s.passed }}</td>
+<td>{{ s.warnings }}</td>
+<td>{{ s.errors }}</td>
+<td>{{ s.missing }}</td>
+<td>{{ s.query_failed }}</td>
+<td>{{ s.commands_recorded }}</td>
+<td>{{ s.collection_status | collstr }}</td>
+<td><a href="#file-{{ s.service }}">{{ s.service }}.md</a></td>
+<td><code>{{ s.service }}.json</code></td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% endmacro %}
+
+{% macro summary_table(checked, exact, higher, lower, missing, incomplete) %}
+<div class="table-wrap"><table>
+<thead><tr><th>Metric</th><th>Count</th></tr></thead>
+<tbody>
+<tr><td>Limits checked</td><td>{{ checked }}</td></tr>
+<tr><td>Exact matches</td><td>{{ exact }}</td></tr>
+<tr><td>Higher than manifest</td><td>{{ higher }}</td></tr>
+<tr><td>Lower than manifest</td><td>{{ lower }}</td></tr>
+<tr><td>Missing live limits</td><td>{{ missing }}</td></tr>
+<tr><td>Incomplete checks</td><td>{{ incomplete }}</td></tr>
+</tbody></table></div>
+{% endmacro %}
+
+{% macro severity_table(passed, warnings, errors, incomplete) %}
+<div class="table-wrap"><table>
+<thead><tr><th>Severity</th><th>Count</th></tr></thead>
+<tbody>
+<tr><td>🟢 PASS</td><td>{{ passed }}</td></tr>
+<tr><td>🟡 WARNING</td><td>{{ warnings }}</td></tr>
+<tr><td>🔴 ERROR</td><td>{{ errors }}</td></tr>
+<tr><td>⚪ INCOMPLETE</td><td>{{ incomplete }}</td></tr>
+</tbody></table></div>
+{% endmacro %}
+
+{% macro findings_table(results, show_ad) %}
+<div class="table-wrap"><table>
+<thead><tr>
+<th>Severity</th><th>Limit</th><th>Scope</th>{% if show_ad %}<th>AD</th>{% endif %}
+<th>Expected</th><th>Actual</th><th>Description</th>
+</tr></thead>
+<tbody>
+{% for r in results %}
+<tr>
+<td>{{ r.status | statusbadge }}</td>
+<td>{{ r.limit }}</td>
+<td>{{ r.scope_type }}</td>
+{% if show_ad %}<td>{{ r.availability_domain or '' }}</td>{% endif %}
+<td>{{ r.expected }}</td>
+<td>{{ r.actual if r.actual is not none else '' }}</td>
+<td>{{ r.message }}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% endmacro %}
+
+<!-- ===================== COVER ===================== -->
+<section class="cover">
+<h1>Validate Limits Report</h1>
+<p><strong>Generated:</strong> {{ meta.generated }}</p>
+<p><strong>Markdown files included:</strong> {{ md_files_included }}</p>
+<h2>Contents</h2>
+<ol class="toc">
+<li><a href="#file-aggregate">Validate Limits</a></li>
+<li><a href="#file-by-service">Validate Limits By Service</a></li>
+{% for s in by_service %}
+<li><a href="#file-{{ s.service }}">Validate Limits: {{ s.service }}</a></li>
+{% endfor %}
+</ol>
+</section>
+
+<!-- ===================== AGGREGATE ===================== -->
+<section class="md-file" id="file-aggregate">
+<div class="file-path">validate-limits.md</div>
+<h1>Validate Limits</h1>
+
+<h2>Run Metadata</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Check</td><td><code>{{ meta.check }}</code></td></tr>
+<tr><td>Overall Status</td><td>{{ meta.overall_status | statusbadge }}</td></tr>
+<tr><td>Profile</td><td><code>{{ meta.profile }}</code></td></tr>
+<tr><td>Tenancy</td><td><code>{{ meta.tenancy }}</code></td></tr>
+<tr><td>Region</td><td><code>{{ meta.region }}</code></td></tr>
+<tr><td>Workbooks</td><td><code>{{ meta.workbooks }}</code></td></tr>
+<tr><td>Generated</td><td><code>{{ meta.generated }}</code></td></tr>
+<tr><td>Services Completed</td><td><code>{{ meta.services_completed }}</code></td></tr>
+</tbody></table></div>
+
+<h2>Summary</h2>
+{{ summary_table(s.total_checked, s.passed, s.warnings, s.errors, s.missing, s.query_failed) }}
+
+<h2>Severity Totals</h2>
+{{ severity_table(s.passed, s.warnings, s.errors + s.missing, s.query_failed) }}
+
+<h2>By Service</h2>
+{{ by_service_table(by_service) }}
+
+<h2>Findings by Service</h2>
+{% for svc in findings_services %}
+<h3 id="findings-{{ svc.service }}"><a href="#file-{{ svc.service }}">{{ svc.service }}</a></h3>
+{{ findings_table(nonpass_by_service[svc.service], True) }}
+{% endfor %}
+</section>
+
+<!-- ===================== BY SERVICE INDEX ===================== -->
+<section class="md-file" id="file-by-service">
+<div class="file-path">by-service/index.md</div>
+<h1>Validate Limits By Service</h1>
+{{ by_service_table(by_service) }}
+</section>
+
+<!-- ===================== PER-SERVICE PAGES ===================== -->
+{% for s in by_service %}
+<section class="md-file" id="file-{{ s.service }}">
+<div class="file-path">by-service/{{ s.service }}.md</div>
+<h1>Validate Limits: {{ s.service }}</h1>
+<p><a href="#file-aggregate">Back to aggregate report</a></p>
+
+<h2>Run Metadata</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Overall Status</td><td>{{ s.overall_status | statusbadge }}</td></tr>
+<tr><td>Profile</td><td><code>{{ meta.profile }}</code></td></tr>
+<tr><td>Region</td><td><code>{{ meta.region }}</code></td></tr>
+<tr><td>Tenancy</td><td><code>{{ meta.tenancy }}</code></td></tr>
+<tr><td>Generated</td><td><code>{{ meta.generated }}</code></td></tr>
+</tbody></table></div>
+
+<h2>Summary</h2>
+{{ summary_table(s.checked, s.passed, s.warnings, s.errors, s.missing, s.query_failed) }}
+
+<h2>Severity Totals</h2>
+{{ severity_table(s.passed, s.warnings, s.errors + s.missing, s.query_failed) }}
+
+<h2>Collection Status</h2>
+<ul>
+<li>Commands recorded: <code>{{ s.commands_recorded }}</code></li>
+<li>Command types: <code>{{ s.command_types | join(', ') }}</code></li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>Collection status</th><th>Count</th></tr></thead>
+<tbody>
+{% for status_str, count in s.collection_status %}
+<tr><td>{{ status_str }}</td><td>{{ count }}</td></tr>
+{% endfor %}
+</tbody></table></div>
+
+<h2>Findings</h2>
+{{ findings_table(results_by_service[s.service], False) }}
+</section>
+{% endfor %}
+
+</body>
+</html>

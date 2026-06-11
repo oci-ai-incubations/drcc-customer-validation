@@ -60,4 +60,8 @@ authenticated region when left blank.
 ## Outputs (in `output/`)
 - `DRCC-Region-Readiness-Report.html` — interactive 4-view report (Chart.js)
 - `DRCC-Region-Readiness-Report.pdf` — print version
-- `Validation-Limits-Report.pdf` — detailed per-limit results
+- `Validation-Limits-Report.pdf` / `.html` — detailed technical report: cover + table
+  of contents, an aggregate page (run metadata, summary, severity totals, by-service
+  table, findings by service), and one page per service (summary, severity totals,
+  collection status, and a full findings table). Buckets: Exact (PASS), Higher
+  (WARNING), Lower (ERROR), Missing (no live value), Incomplete (OCI query failed).

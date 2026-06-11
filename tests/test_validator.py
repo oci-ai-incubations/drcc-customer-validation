@@ -29,11 +29,24 @@ def test_warning_when_actual_higher():
     assert summary.warnings == 1
 
 
-def test_incomplete_when_no_live_value():
+def test_missing_when_no_live_value_but_query_ok():
+    # Query succeeded for the service but no live value for this limit -> Missing.
     summary = validate([m("vcn", "subnets", 5)], [])
+    r = summary.results[0]
+    assert r.status == Status.MISSING
+    assert r.actual is None
+    assert summary.missing == 1
+    assert summary.incomplete == 1   # missing rolls up into "not validated"
+
+
+def test_incomplete_when_service_query_failed():
+    # The service's OCI query failed -> its limits are Incomplete, not Missing.
+    summary = validate([m("vcn", "subnets", 5)], [], failed_services={"vcn"})
     r = summary.results[0]
     assert r.status == Status.INCOMPLETE
     assert r.actual is None
+    assert summary.query_failed == 1
+    assert summary.missing == 0
     assert summary.incomplete == 1
 
 

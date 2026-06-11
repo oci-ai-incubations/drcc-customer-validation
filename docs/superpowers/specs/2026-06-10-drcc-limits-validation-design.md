@@ -90,10 +90,16 @@ Executive, Scorecard, Detailed+Charts, Certificate). Produced as:
 - **PDF** — same layout via WeasyPrint; charts pre-rendered as matplotlib PNGs
   (WeasyPrint does not execute JavaScript).
 
-### Validation Limits report (PDF)
-Per-service tables listing every limit with columns: Limit, Description, Expected,
-Actual, Scope, Availability Domain, Status. Includes a summary page (totals +
-per-service rollup). Rendered via the same HTML→WeasyPrint path.
+### Validation Limits report (PDF + HTML)
+Detailed GitHub-style technical report (matching the customer-provided
+`validate-limits-report.html` layout): a cover with a 3-column table of contents,
+an **aggregate page** (Run Metadata, Summary, Severity Totals, full By-Service
+table, and Findings by Service), and **one page per service** (Run Metadata,
+Summary, Severity Totals, Collection Status, and a full Findings table). Result
+buckets: Exact matches (PASS), Higher than manifest (WARNING), Lower than manifest
+(ERROR), Missing live limits (query succeeded but no value), Incomplete checks (the
+service's OCI query failed). Rendered via Jinja2 → WeasyPrint (PDF) and as a
+standalone HTML file. (Supersedes the original simple per-service-table design.)
 
 ## Report metadata — `config/report_config.yaml`
 Fields: `customer_name`, `region_label`, `ga_target_date`, `validation_run_date`,

@@ -9,10 +9,15 @@ from pathlib import Path
 
 from .auth import build_limits_client, build_oci_context
 from .config import load_report_config
-from .limits_client import fetch_live_limits, unique_services
+from .limits_client import fetch_live_limits_with_status, unique_services
 from .manifest import load_manifest
-from .reports.limits_report import render_limits_pdf
 from .reports.readiness import render_readiness_html, render_readiness_pdf
+from .reports.validate_limits_report import (
+    RunMetadata,
+    overall_status,
+    render_validate_limits_html,
+    render_validate_limits_pdf,
+)
 from .validator import ValidationSummary, validate
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -34,21 +39,37 @@ def run_validation(
     manifest = load_manifest(manifest_path)
     run_date = datetime.date.today().strftime("%B %d, %Y")
     cfg = load_report_config(config_path, region_default=ctx.region, run_date=run_date)
-    logger.info("Loaded %d manifest limits across %d services",
-                len(manifest), len(unique_services(manifest)))
+    services = unique_services(manifest)
+    logger.info("Loaded %d manifest limits across %d services", len(manifest), len(services))
 
     client = build_limits_client(ctx)
-    live = fetch_live_limits(client, ctx.tenancy_id, unique_services(manifest))
-    logger.info("Fetched %d live limit values", len(live))
+    live, statuses = fetch_live_limits_with_status(client, ctx.tenancy_id, services)
+    failed = {svc for svc, st in statuses.items() if not st.ok}
+    logger.info("Fetched %d live limit values (%d service queries failed)", len(live), len(failed))
 
-    summary = validate(manifest, live)
-    logger.info("Validation: %d checked, %d pass, %d error, %d warn, %d incomplete",
-                summary.total_checked, summary.passed, summary.errors,
-                summary.warnings, summary.incomplete)
+    summary = validate(manifest, live, failed_services=failed, statuses=statuses)
+    logger.info(
+        "Validation: %d checked, %d exact, %d lower(err), %d higher(warn), %d missing, %d incomplete",
+        summary.total_checked, summary.passed, summary.errors,
+        summary.warnings, summary.missing, summary.query_failed,
+    )
+
+    profile = "resource-principal" if ctx.signer is not None else os.environ.get("OCI_PROFILE", "DEFAULT")
+    meta = RunMetadata(
+        check="validate-limits",
+        overall_status=overall_status(summary),
+        profile=profile,
+        tenancy=ctx.tenancy_id,
+        region=ctx.region,
+        workbooks=str(manifest_path),
+        generated=datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+        services_completed=f"{len(services)}/{len(services)}",
+    )
 
     render_readiness_html(summary, cfg, output_dir / "DRCC-Region-Readiness-Report.html")
     render_readiness_pdf(summary, cfg, output_dir / "DRCC-Region-Readiness-Report.pdf")
-    render_limits_pdf(summary, cfg, output_dir / "Validation-Limits-Report.pdf")
+    render_validate_limits_pdf(summary, meta, output_dir / "Validation-Limits-Report.pdf")
+    render_validate_limits_html(summary, meta, output_dir / "Validation-Limits-Report.html")
     logger.info("Reports written to %s", output_dir)
     return summary
 

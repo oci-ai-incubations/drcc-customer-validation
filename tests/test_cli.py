@@ -20,7 +20,7 @@ def test_run_validation_produces_reports(tmp_path, monkeypatch):
         config = {}; signer = None; tenancy_id = "ocid1.tenancy..t"; region = "us-ashburn-1"
     monkeypatch.setattr(cli, "build_oci_context", lambda: Ctx())
     monkeypatch.setattr(cli, "build_limits_client", lambda ctx: object())
-    monkeypatch.setattr(cli, "fetch_live_limits", lambda c, t, svcs: live)
+    monkeypatch.setattr(cli, "fetch_live_limits_with_status", lambda c, t, svcs: (live, {}))
 
     summary = cli.run_validation(output_dir=tmp_path, manifest_path="x", config_path="y")
 
@@ -28,4 +28,5 @@ def test_run_validation_produces_reports(tmp_path, monkeypatch):
     assert (tmp_path / "DRCC-Region-Readiness-Report.html").exists()
     assert (tmp_path / "DRCC-Region-Readiness-Report.pdf").exists()
     assert (tmp_path / "Validation-Limits-Report.pdf").exists()
+    assert (tmp_path / "Validation-Limits-Report.html").exists()
     assert captured.get("run_date"), "run_date must be passed as a non-empty string"

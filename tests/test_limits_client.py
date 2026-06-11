@@ -1,5 +1,9 @@
 from types import SimpleNamespace
-from drcc_validation.limits_client import LiveLimitValue, fetch_live_limits
+from drcc_validation.limits_client import (
+    LiveLimitValue,
+    fetch_live_limits,
+    fetch_live_limits_with_status,
+)
 
 
 class FakeClient:
@@ -74,3 +78,29 @@ def test_request_exception_degrades_to_incomplete(monkeypatch):
     # The failing "compute" service must be skipped — no exception propagates
     assert LiveLimitValue("vcn", "subnets", "REGION", None, 5) in out
     assert all(r.service == "vcn" for r in out)
+
+
+def test_with_status_reports_per_service_ok_and_failure(monkeypatch):
+    import drcc_validation.limits_client as lc
+    import oci
+
+    good_data = [
+        SimpleNamespace(name="subnets", scope_type="REGION", availability_domain=None, value=5),
+    ]
+
+    def pager(list_func, compartment_id, service_name=None, **kwargs):
+        if service_name == "vcn":
+            return SimpleNamespace(data=good_data)
+        raise oci.exceptions.ServiceError(400, "InvalidParameter", {}, "bad")
+
+    monkeypatch.setattr(lc.oci.pagination, "list_call_get_all_results", pager)
+    client = FakeClient(client_values)
+    values, statuses = fetch_live_limits_with_status(
+        client, "t", ["compute", "vcn"]
+    )
+    assert [v.service for v in values] == ["vcn"]
+    assert statuses["vcn"].ok is True
+    assert statuses["compute"].ok is False
+    # The failed service records the ServiceError as its collection status.
+    assert "ServiceError" in statuses["compute"].collection_status[0][0]
+    assert "list_limit_values" in statuses["compute"].collection_status[0][0]
