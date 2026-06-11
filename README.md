@@ -19,7 +19,7 @@ build when any limit is below the manifest.)
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 OCI_ENV=dev PYTHONPATH=src .venv/bin/pytest -m integration -v
-open output/DRCC-Region-Readiness-Report.html
+open output/reports/DRCC-Region-Readiness-Report.html
 ```
 Or run the CLI directly:
 ```bash
@@ -36,8 +36,9 @@ docker run --rm -e OCI_ENV=prod -v "$PWD/output:/app/output" drcc-validate
 
 ### Verify the image without OCI (unit tests only)
 ```bash
-docker run --rm drcc-validate pytest -m "not integration" -v
+docker run --rm drcc-validate -m "not integration" -v
 ```
+Args after the image name are passed straight to `pytest`; with no args the container runs the live integration suite and writes artifacts.
 
 ### dev (API-key profile) in Docker — caveat
 `~/.oci/config` references private keys by **absolute host path**
@@ -57,7 +58,7 @@ Edit `config/report_config.yaml` or override per-field with env vars
 `REPORT_JIRA_URL`, `REPORT_STRICT`). Region label auto-detects from the
 authenticated region when left blank.
 
-## Outputs (in `output/`)
+## Outputs (in `output/reports/`)
 - `DRCC-Region-Readiness-Report.html` — interactive 4-view report (Chart.js)
 - `DRCC-Region-Readiness-Report.pdf` — print version
 - `Validation-Limits-Report.pdf` / `.html` — detailed technical report: cover + table
@@ -65,3 +66,4 @@ authenticated region when left blank.
   table, findings by service), and one page per service (summary, severity totals,
   collection status, and a full findings table). Buckets: Exact (PASS), Higher
   (WARNING), Lower (ERROR), Missing (no live value), Incomplete (OCI query failed).
+JUnit results are written to `output/logs/results.xml`.
