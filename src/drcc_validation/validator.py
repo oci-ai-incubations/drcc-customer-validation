@@ -75,14 +75,15 @@ def validate(
                 )
             )
             continue
-        for v in matches:
-            results.append(
-                LimitResult(
-                    ml.service, ml.limit, ml.description, ml.expected_value,
-                    v.value, v.scope_type, v.availability_domain,
-                    _status_for(ml.expected_value, v.value),
-                )
+        # All limits are scoped to global: sum the per-AD/region values into a
+        # single region total and compare once against the manifest expected.
+        total = sum(v.value for v in matches)
+        results.append(
+            LimitResult(
+                ml.service, ml.limit, ml.description, ml.expected_value,
+                total, "GLOBAL", None, _status_for(ml.expected_value, total),
             )
+        )
 
     svc_map: dict[str, ServiceSummary] = {}
     summary = ValidationSummary(results=results)

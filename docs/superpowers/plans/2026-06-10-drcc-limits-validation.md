@@ -20,6 +20,12 @@ From the HTML template legend:
 - `actual > expected` → **Warning** (higher than manifest)
 - no live value for a manifest limit → **Incomplete**
 
+**Scope:** all limits are scoped to global — the per-AD/region values OCI returns
+for a `(service, limit)` are **summed into one region total** and compared once,
+so there is exactly one check per manifest row (recorded with
+`scope_type = "GLOBAL"`). (Superseded the original per-AD-expansion design at the
+user's request after the first live run.)
+
 ---
 
 ## Task 0: Project scaffolding

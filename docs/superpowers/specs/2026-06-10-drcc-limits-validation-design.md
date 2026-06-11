@@ -56,9 +56,13 @@ so the rest of the code is auth-mode agnostic.
 4. **Aggregate** per-service counts (checked / pass / error / warning / incomplete)
    and grand totals for the executive summary and charts.
 
-A limit value may be region- or AD-scoped; each returned `(scope, AD)` value is a
-distinct check, so one manifest row can expand to several checks. When no live
-value exists for a manifest limit, it counts as one Incomplete check.
+**All limits are scoped to global.** OCI may return a limit value per availability
+domain (or per region); these are **summed into a single region total** per
+manifest `(service, limit)` and compared once against the manifest's expected
+value. The collapsed result is recorded with `scope_type = "GLOBAL"` and no
+availability domain. This yields exactly **one check per manifest row** (612
+rows → 612 checks). When no live value exists for a manifest limit, it counts as
+one Incomplete check.
 
 ## Components (`src/drcc_validation/`)
 
