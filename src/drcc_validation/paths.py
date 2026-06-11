@@ -29,3 +29,15 @@ def reports_dir() -> Path:
 def logs_dir() -> Path:
     """Where run logs / JUnit results are written."""
     return artifacts_dir() / "logs"
+
+
+def events_file() -> Path | None:
+    """Realtime events file path, or None outside the prod framework.
+
+    Generated only when GENERIC_TESTS_WORKSPACE_DIR is set; the Validation
+    Service monitors this exact path (directly under the workspace dir).
+    """
+    workspace = os.environ.get("GENERIC_TESTS_WORKSPACE_DIR")
+    if not workspace:
+        return None
+    return Path(workspace) / "tests-events.json"

@@ -37,3 +37,18 @@ def test_empty_output_dir_falls_back(monkeypatch):
     monkeypatch.delenv("GENERIC_TESTS_WORKSPACE_DIR", raising=False)
     monkeypatch.setenv("OUTPUT_DIR", "")
     assert paths.artifacts_dir() == Path("output")
+
+
+def test_events_file_none_when_workspace_unset(monkeypatch):
+    monkeypatch.delenv("GENERIC_TESTS_WORKSPACE_DIR", raising=False)
+    assert paths.events_file() is None
+
+
+def test_events_file_none_when_workspace_empty(monkeypatch):
+    monkeypatch.setenv("GENERIC_TESTS_WORKSPACE_DIR", "")
+    assert paths.events_file() is None
+
+
+def test_events_file_under_workspace_when_set(monkeypatch):
+    monkeypatch.setenv("GENERIC_TESTS_WORKSPACE_DIR", "/workspace/job1")
+    assert paths.events_file() == Path("/workspace/job1/tests-events.json")
