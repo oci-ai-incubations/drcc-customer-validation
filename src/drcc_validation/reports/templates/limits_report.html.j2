@@ -1,0 +1,39 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>{{ css }}
+@page { size: A4 landscape; margin: 1.2cm; }
+.report-card { page-break-inside: auto; }
+table { page-break-inside: auto; }
+tr { page-break-inside: avoid; }
+h2.svc { font-size: 15px; margin: 1.2rem 0 0.5rem; color: #1a1a1a; }
+</style></head><body>
+<div class="report-card">
+  <div class="oracle-logo">ORACLE CLOUD INFRASTRUCTURE</div>
+  <div class="report-title" style="margin-top:6px;">Validation Limits Report</div>
+  <div class="report-sub">{{ cfg.customer_name }} · {{ cfg.region_label }} · {{ cfg.validation_run_date }}</div>
+  <div class="metric-row" style="margin-top:1rem;">
+    <div class="metric"><div class="ml">Checked</div><div class="mv">{{ s.total_checked }}</div></div>
+    <div class="metric"><div class="ml">Pass</div><div class="mv c-pass">{{ s.passed }}</div></div>
+    <div class="metric"><div class="ml">Error</div><div class="mv c-err">{{ s.errors }}</div></div>
+    <div class="metric"><div class="ml">Warning / Incomplete</div><div class="mv c-warn">{{ s.warnings }} / {{ s.incomplete }}</div></div>
+  </div>
+</div>
+
+{% for service, rows in grouped %}
+<h2 class="svc">{{ service }} <span style="font-size:11px;color:#999;">({{ rows|length }} checks)</span></h2>
+<table class="svc-table">
+  <thead><tr><th>Limit</th><th>Description</th><th>Expected</th><th>Actual</th><th>Scope</th><th>AD</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    {% set sb = {'Pass':'badge-pass','Error':'badge-err','Warning':'badge-warn','Incomplete':'badge-inc'}[r.status.value] %}
+    <tr>
+      <td>{{ r.limit }}</td><td>{{ r.description }}</td>
+      <td>{{ r.expected }}</td><td>{{ r.actual if r.actual is not none else '—' }}</td>
+      <td>{{ r.scope_type or '—' }}</td><td>{{ r.availability_domain or '—' }}</td>
+      <td><span class="badge {{ sb }}">{{ r.status.value }}</span></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endfor %}
+<div class="footer-note" style="margin-top:1.5rem;">Oracle DRCC Validation Agent · Confidential · For customer use only</div>
+</body></html>
