@@ -1,6 +1,7 @@
 """Render the DRCC Region Readiness report as HTML and PDF."""
 from __future__ import annotations
 
+import datetime
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -21,6 +22,10 @@ def _css() -> str:
     return (_TEMPLATE_DIR / "styles.css").read_text()
 
 
+def _generated() -> str:
+    return datetime.datetime.now().strftime("%B %d, %Y %H:%M")
+
+
 def _top_services(summary: ValidationSummary, n: int = 6):
     ranked = [s for s in summary.services if s.errors or s.warnings][:n]
     return (
@@ -35,7 +40,7 @@ def render_readiness_html(
 ) -> Path:
     labels, errs, warns = _top_services(summary)
     html = _env.get_template("readiness.html.j2").render(
-        s=summary, cfg=cfg, css=_css(),
+        s=summary, cfg=cfg, css=_css(), generated=_generated(),
         top_labels=labels, top_errors=errs, top_warnings=warns,
     )
     out = Path(out_path)
@@ -49,7 +54,7 @@ def render_readiness_pdf(
 ) -> Path:
     labels, errs, warns = _top_services(summary)
     html = _env.get_template("readiness_pdf.html.j2").render(
-        s=summary, cfg=cfg, css=_css(),
+        s=summary, cfg=cfg, css=_css(), generated=_generated(),
         doughnut_uri=doughnut_data_uri(
             summary.passed, summary.errors, summary.warnings, summary.incomplete
         ),

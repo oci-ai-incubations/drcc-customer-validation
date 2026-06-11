@@ -1,21 +1,41 @@
 <!DOCTYPE html><html><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DRCC Region Readiness Report — {{ cfg.customer_name }}</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>{{ css }}</style>
-</head><body id="artifacts-component-root-html">
+</head>
+<body id="artifacts-component-root-html">
+
+{% set badge = 'badge-pass' if s.errors == 0 else 'badge-warn' %}
+{% set verdict_cls = 'verdict-pass' if s.errors == 0 else 'verdict-warn' %}
+{% set status_text = '✓ Ready for GA' if s.errors == 0 else '⚠ Attention Required' %}
+{% set err_services = s.services | selectattr('errors') | map(attribute='service') | list %}
+
+{% macro svc_badge(svc) %}
+  {%- if svc.errors -%}<span class="badge badge-err">Error</span>
+  {%- elif svc.warnings -%}<span class="badge badge-warn">Warning</span>
+  {%- elif svc.incomplete and not svc.passed -%}<span class="badge badge-inc">Incomplete</span>
+  {%- else -%}<span class="badge badge-pass">Pass</span>{%- endif -%}
+{% endmacro %}
+
+{% macro prog(svc) %}
+  {%- set pct = (100 * svc.passed / svc.checked) | round(0, 'floor') | int if svc.checked else 0 -%}
+  {%- set color = '#1e7e34' if (svc.errors==0 and svc.warnings==0 and svc.incomplete==0) else ('#c62828' if svc.errors else ('#e65100' if svc.warnings else '#888')) -%}
+  <div class="prog-bar"><div class="prog-fill" style="width:{{ pct }}%;background:{{ color }}"></div></div>
+{% endmacro %}
+
 <div class="nav">
   <button class="nav-btn active" onclick="show(0)">1 · Executive</button>
   <button class="nav-btn" onclick="show(1)">2 · Scorecard</button>
   <button class="nav-btn" onclick="show(2)">3 · Detailed + Charts</button>
   <button class="nav-btn" onclick="show(3)">4 · Certificate</button>
 </div>
+<div class="dl-bar">
+  <a id="dlLink" class="dl-btn" href="#" download="DRCC-Region-Readiness-Report.html">⬇ Download HTML File</a>
+</div>
 
-{% set badge = 'badge-pass' if s.errors == 0 else 'badge-warn' %}
-{% set verdict_cls = 'verdict-pass' if s.errors == 0 else 'verdict-warn' %}
-{% set status_text = '✓ Ready for GA' if s.errors == 0 else '⚠ Attention Required' %}
-
-<!-- TEMPLATE 1 — Executive -->
+<!-- ===================== TEMPLATE 1 — EXECUTIVE ===================== -->
 <div class="template active" id="t0">
   <div class="report-card">
     <div class="report-header">
@@ -27,20 +47,23 @@
       </div>
       <span class="badge {{ badge }}" style="font-size:12px;padding:5px 14px;margin-top:4px;">{{ status_text }}</span>
     </div>
+
     <div class="verdict {{ verdict_cls }}">
       Service limit validation for your region is complete.
       {% if s.errors or s.warnings %}
-      <strong>{{ s.errors }} errors</strong> and <strong>{{ s.warnings }} warnings</strong> were identified that require resolution before your region can be confirmed as production-ready.
+      The majority of limits are configured correctly. However, <strong>{{ s.errors }} errors</strong> and <strong>{{ s.warnings }} warnings</strong> were identified that require resolution before your region can be confirmed as production-ready. Your Oracle team is actively reviewing these items.
       {% else %}
-      All checked limits match the approved manifest.
+      All {{ s.total_checked }} checked limits match the approved manifest. Your region meets the contracted service-limit configuration.
       {% endif %}
     </div>
+
     <div class="metric-row">
-      <div class="metric"><div class="ml">Limits validated</div><div class="mv" style="color:#1a1a1a;">{{ s.total_checked }}</div></div>
-      <div class="metric"><div class="ml">✓ Passed</div><div class="mv c-pass">{{ s.passed }}</div></div>
-      <div class="metric"><div class="ml">✗ Errors</div><div class="mv c-err">{{ s.errors }}</div></div>
-      <div class="metric"><div class="ml">⚠ Warnings</div><div class="mv c-warn">{{ s.warnings }}</div></div>
+      <div class="metric"><div class="ml">Limits validated</div><div class="mv" style="color:#1a1a1a;">{{ "{:,}".format(s.total_checked) }}</div></div>
+      <div class="metric"><div class="ml">✓ Passed</div><div class="mv c-pass">{{ "{:,}".format(s.passed) }}</div></div>
+      <div class="metric"><div class="ml">✗ Errors</div><div class="mv c-err">{{ "{:,}".format(s.errors) }}</div></div>
+      <div class="metric"><div class="ml">⚠ Warnings</div><div class="mv c-warn">{{ "{:,}".format(s.warnings) }}</div></div>
     </div>
+
     <hr class="divider">
     <div class="section-label">Contact &amp; support</div>
     {% for c in cfg.contacts %}
@@ -50,12 +73,16 @@
       <a href="mailto:{{ c.email }}" class="contact-link">Email</a>
     </div>
     {% endfor %}
-    <div style="margin-top:12px;"><a class="jira-btn" href="{{ cfg.jira_url }}" target="_blank">+ Create JIRA Ticket</a></div>
-    <div class="footer-note" style="margin-top:1.5rem;">Generated by the Oracle DRCC Validation Agent · Confidential · For customer use only</div>
+    <div style="margin-top:12px;">
+      <div style="font-size:13px;color:#555;margin-bottom:6px;">Found an issue not covered in this report?</div>
+      <a class="jira-btn" href="{{ cfg.jira_url }}" target="_blank">+ Create JIRA Ticket</a>
+    </div>
+
+    <div class="footer-note" style="margin-top:1.5rem;">This report was generated by the Oracle DRCC Validation Agent · Confidential · For customer use only</div>
   </div>
 </div>
 
-<!-- TEMPLATE 2 — Scorecard -->
+<!-- ===================== TEMPLATE 2 — SCORECARD ===================== -->
 <div class="template" id="t1">
   <div class="report-card">
     <div class="report-header">
@@ -66,28 +93,47 @@
       </div>
       <span class="badge {{ badge }}" style="font-size:12px;padding:5px 14px;">{{ status_text }}</span>
     </div>
+
     <div class="meta-grid">
       <div class="meta-cell"><div class="meta-key">Customer</div><div class="meta-val">{{ cfg.customer_name }}</div></div>
       <div class="meta-cell"><div class="meta-key">Region</div><div class="meta-val">{{ cfg.region_label }}</div></div>
       <div class="meta-cell"><div class="meta-key">GA Target Date</div><div class="meta-val">{{ cfg.ga_target_date }}</div></div>
-      <div class="meta-cell"><div class="meta-key">Services Checked</div><div class="meta-val">{{ s.services|length }}</div></div>
+      <div class="meta-cell"><div class="meta-key">Services Checked</div><div class="meta-val">{{ s.services|length }} / {{ s.services|length }}</div></div>
     </div>
+
+    <div class="metric-row">
+      <div class="metric"><div class="ml">Total limits</div><div class="mv" style="color:#1a1a1a;">{{ "{:,}".format(s.total_checked) }}</div></div>
+      <div class="metric"><div class="ml"><span class="dot dot-pass" style="display:inline-block;margin-right:4px;"></span>Pass</div><div class="mv c-pass">{{ "{:,}".format(s.passed) }}</div></div>
+      <div class="metric"><div class="ml"><span class="dot dot-err" style="display:inline-block;margin-right:4px;"></span>Error</div><div class="mv c-err">{{ "{:,}".format(s.errors) }}</div></div>
+      <div class="metric"><div class="ml"><span class="dot dot-warn" style="display:inline-block;margin-right:4px;"></span>Warning</div><div class="mv c-warn">{{ "{:,}".format(s.warnings) }}</div></div>
+    </div>
+
     <div class="section-label">Per-service results</div>
     <table class="svc-table">
-      <thead><tr><th>Service</th><th>Status</th><th>Checked</th><th>Pass</th><th>Errors</th><th>Warnings</th></tr></thead>
+      <thead><tr><th>Service</th><th>Status</th><th>Limits checked</th><th>Pass</th><th>Errors</th><th>Progress</th></tr></thead>
       <tbody>
       {% for svc in s.services %}
-        {% set sb = 'badge-pass' if (svc.errors==0 and svc.warnings==0 and svc.incomplete==0) else ('badge-err' if svc.errors else ('badge-warn' if svc.warnings else 'badge-inc')) %}
-        {% set st = 'Pass' if (svc.errors==0 and svc.warnings==0 and svc.incomplete==0) else ('Error' if svc.errors else ('Warning' if svc.warnings else 'Incomplete')) %}
-        <tr><td>{{ svc.service }}</td><td><span class="badge {{ sb }}">{{ st }}</span></td><td>{{ svc.checked }}</td><td>{{ svc.passed }}</td><td>{{ svc.errors }}</td><td>{{ svc.warnings }}</td></tr>
+        <tr><td>{{ svc.service }}</td><td>{{ svc_badge(svc) }}</td><td>{{ svc.checked }}</td><td>{{ svc.passed }}</td><td>{{ svc.errors }}</td><td>{{ prog(svc) }}</td></tr>
       {% endfor %}
       </tbody>
     </table>
+    <div style="font-size:12px;color:#aaa;margin-top:8px;">Showing all {{ s.services|length }} services.</div>
+
+    <hr class="divider">
+    <div class="section-label">Contact &amp; support</div>
+    {% for c in cfg.contacts %}
+    <div class="contact-row">
+      <div class="contact-avatar">{{ c.name.split()|map('first')|join|upper }}</div>
+      <div><div class="contact-name">{{ c.name }}</div><div class="contact-role">{{ c.role }}</div></div>
+      <a href="mailto:{{ c.email }}" class="contact-link">Email</a>
+    </div>
+    {% endfor %}
+    <a class="jira-btn" href="{{ cfg.jira_url }}" target="_blank">+ Create JIRA Ticket</a>
     <div class="footer-note">Oracle DRCC Validation Agent · Confidential · For customer use only</div>
   </div>
 </div>
 
-<!-- TEMPLATE 3 — Detailed + Charts -->
+<!-- ===================== TEMPLATE 3 — DETAILED + CHARTS ===================== -->
 <div class="template" id="t2">
   <div class="report-card">
     <div class="report-header">
@@ -98,22 +144,78 @@
       </div>
       <span class="badge {{ badge }}" style="font-size:12px;padding:5px 14px;">{{ status_text }}</span>
     </div>
-    <div class="chart-grid">
-      <div><div class="section-label">Results overview</div><div class="chart-wrap" style="height:220px;"><canvas id="doughnutChart"></canvas></div></div>
-      <div><div class="section-label">Top services by error count</div><div class="chart-wrap" style="height:220px;"><canvas id="barChart"></canvas></div></div>
+
+    <div class="meta-grid">
+      <div class="meta-cell"><div class="meta-key">Customer</div><div class="meta-val">{{ cfg.customer_name }}</div></div>
+      <div class="meta-cell"><div class="meta-key">Region ID</div><div class="meta-val">{{ cfg.region_label }}</div></div>
+      <div class="meta-cell"><div class="meta-key">Validation type</div><div class="meta-val">Service Limits</div></div>
+      <div class="meta-cell"><div class="meta-key">GA Target</div><div class="meta-val">{{ cfg.ga_target_date }}</div></div>
+      <div class="meta-cell"><div class="meta-key">Services completed</div><div class="meta-val">{{ s.services|length }} / {{ s.services|length }}</div></div>
+      <div class="meta-cell"><div class="meta-key">Generated</div><div class="meta-val">{{ generated }}</div></div>
     </div>
+
+    <div class="verdict {{ verdict_cls }}">
+      {% if s.errors or s.warnings %}
+      Validation is complete. <strong>{{ s.errors }} errors</strong> and <strong>{{ s.warnings }} warnings</strong> were detected{% if err_services %} across {{ err_services[:2]|join(' and ') }}{% if err_services|length > 2 %} and other{% endif %} services{% endif %}. Oracle is actively remediating these before the scheduled GA date of {{ cfg.ga_target_date }}.
+      {% else %}
+      Validation is complete. All {{ s.total_checked }} checked limits match the approved manifest. No remediation required.
+      {% endif %}
+    </div>
+
+    <div class="metric-row">
+      <div class="metric"><div class="ml">Limits checked</div><div class="mv" style="color:#1a1a1a;">{{ "{:,}".format(s.total_checked) }}</div></div>
+      <div class="metric"><div class="ml">✓ Pass</div><div class="mv c-pass">{{ "{:,}".format(s.passed) }}</div></div>
+      <div class="metric"><div class="ml">✗ Error</div><div class="mv c-err">{{ "{:,}".format(s.errors) }}</div></div>
+      <div class="metric"><div class="ml">⚠ Warning</div><div class="mv c-warn">{{ "{:,}".format(s.warnings) }}</div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div>
+        <div class="section-label">Results overview</div>
+        <div class="chart-wrap" style="height:220px;"><canvas id="doughnutChart"></canvas></div>
+      </div>
+      <div>
+        <div class="section-label">Top services by error count</div>
+        <div class="chart-wrap" style="height:220px;"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+
     <div class="section-label">What each status means</div>
     <div style="font-size:13px;line-height:1.8;margin-bottom:1.25rem;">
-      <div><span class="badge badge-pass" style="margin-right:8px;">Pass</span>Limit matches the approved manifest.</div>
-      <div><span class="badge badge-err" style="margin-right:8px;">Error</span>Limit is lower than contracted.</div>
-      <div><span class="badge badge-warn" style="margin-right:8px;">Warning</span>Limit is higher than the manifest.</div>
-      <div><span class="badge badge-inc" style="margin-right:8px;">Incomplete</span>Live data not available.</div>
+      <div style="margin-bottom:5px;"><span class="badge badge-pass" style="margin-right:8px;">Pass</span>Limit matches the approved manifest. No action required.</div>
+      <div style="margin-bottom:5px;"><span class="badge badge-err" style="margin-right:8px;">Error</span>Limit is lower than contracted. Oracle will investigate and remediate before GA.</div>
+      <div style="margin-bottom:5px;"><span class="badge badge-warn" style="margin-right:8px;">Warning</span>Limit is higher than the manifest. Oracle will verify this is intentional.</div>
+      <div><span class="badge badge-inc" style="margin-right:8px;">Incomplete</span>Live data not yet available. These checks will be re-run before GA confirmation.</div>
     </div>
-    <div class="footer-note">Oracle DRCC Validation Agent · Confidential · For customer use only</div>
+
+    <div class="section-label">Per-service results</div>
+    <table class="svc-table" style="margin-bottom:1.5rem;">
+      <thead><tr><th>Service</th><th>Status</th><th>Checked</th><th>Pass</th><th>Errors</th><th>Warnings</th></tr></thead>
+      <tbody>
+      {% for svc in s.services %}
+        <tr><td>{{ svc.service }}</td><td>{{ svc_badge(svc) }}</td><td>{{ svc.checked }}</td><td>{{ svc.passed }}</td><td>{{ svc.errors }}</td><td>{{ svc.warnings }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <hr class="divider">
+    <div class="section-label">Contact &amp; support</div>
+    {% for c in cfg.contacts %}
+    <div class="contact-row">
+      <div class="contact-avatar">{{ c.name.split()|map('first')|join|upper }}</div>
+      <div><div class="contact-name">{{ c.name }}</div><div class="contact-role">{{ c.role }}</div></div>
+      <a href="mailto:{{ c.email }}" class="contact-link">Email</a>
+    </div>
+    {% endfor %}
+    <div style="margin-top:12px;">
+      <div style="font-size:13px;color:#555;margin-bottom:6px;">If you encounter issues not covered in this report, please raise a JIRA ticket with your Oracle team:</div>
+      <a class="jira-btn" href="{{ cfg.jira_url }}" target="_blank">+ Create JIRA Ticket</a>
+    </div>
+    <div class="footer-note" style="margin-top:1.5rem;">Oracle DRCC Validation Agent · Confidential · For customer use only</div>
   </div>
 </div>
 
-<!-- TEMPLATE 4 — Certificate -->
+<!-- ===================== TEMPLATE 4 — CERTIFICATE ===================== -->
 <div class="template" id="t3">
   <div class="report-card">
     <div style="text-align:center;padding:1.5rem 0 1rem;">
@@ -121,23 +223,130 @@
       <div class="report-title">Region Readiness Report</div>
       <div class="report-sub" style="margin-top:4px;">{{ cfg.customer_name }} · {{ cfg.region_label }} · {{ cfg.validation_run_date }}</div>
     </div>
+
     <hr class="divider">
-    <div class="pill-row">
-      <div class="pill"><span class="dot dot-pass"></span><span>{{ s.passed }} limits confirmed</span></div>
-      <div class="pill"><span class="dot dot-err"></span><span>{{ s.errors }} errors</span></div>
-      <div class="pill"><span class="dot dot-warn"></span><span>{{ s.warnings }} warnings</span></div>
-      <div class="pill"><span class="dot dot-inc"></span><span>{{ s.incomplete }} incomplete</span></div>
+
+    {% if s.errors %}
+    <div style="display:flex;align-items:center;gap:1.5rem;background:#fff8f3;border:1px solid #ffe0c0;border-radius:10px;padding:1.25rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <div style="text-align:center;flex-shrink:0;min-width:72px;">
+        <div style="font-size:40px;font-weight:700;color:#e65100;line-height:1;">{{ s.errors }}</div>
+        <div style="font-size:11px;color:#999;margin-top:2px;">items need<br>attention</div>
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:16px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">Not yet certified for GA</div>
+        <div style="font-size:13px;color:#555;line-height:1.7;">Service limit validation identified discrepancies{% if err_services %} in <strong>{{ err_services[0] }}</strong>{% if err_services|length > 1 %} and <strong>{{ err_services[1] }}</strong>{% endif %}{% if err_services|length > 2 %} and other{% endif %} services{% endif %}. Oracle is working to resolve these before your GA date of <strong>{{ cfg.ga_target_date }}</strong>.</div>
+      </div>
+      <span class="badge badge-warn" style="font-size:12px;padding:5px 14px;align-self:flex-start;">⚠ Pending</span>
     </div>
-    <div class="footer-note" style="margin-top:1.5rem;">Oracle DRCC Validation Agent · Confidential · For customer use only</div>
+    {% else %}
+    <div style="display:flex;align-items:center;gap:1.5rem;background:#f0faf3;border:1px solid #c6e8d2;border-radius:10px;padding:1.25rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <div style="text-align:center;flex-shrink:0;min-width:72px;">
+        <div style="font-size:40px;font-weight:700;color:#1e7e34;line-height:1;">✓</div>
+        <div style="font-size:11px;color:#999;margin-top:2px;">all limits<br>confirmed</div>
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:16px;font-weight:600;color:#1a1a1a;margin-bottom:4px;">Certified for GA</div>
+        <div style="font-size:13px;color:#555;line-height:1.7;">All {{ s.total_checked }} validated service limits match the approved manifest. The region meets the contracted configuration for your GA date of <strong>{{ cfg.ga_target_date }}</strong>.</div>
+      </div>
+      <span class="badge badge-pass" style="font-size:12px;padding:5px 14px;align-self:flex-start;">✓ Certified</span>
+    </div>
+    {% endif %}
+
+    <div class="meta-grid" style="margin-bottom:1.5rem;">
+      <div class="meta-cell"><div class="meta-key">Customer</div><div class="meta-val">{{ cfg.customer_name }}</div></div>
+      <div class="meta-cell"><div class="meta-key">Region</div><div class="meta-val">{{ cfg.region_label }}</div></div>
+      <div class="meta-cell"><div class="meta-key">GA Target</div><div class="meta-val">{{ cfg.ga_target_date }}</div></div>
+      <div class="meta-cell"><div class="meta-key">Next validation</div><div class="meta-val">{{ 'After remediation' if s.errors else 'Confirmed' }}</div></div>
+    </div>
+
+    <div class="pill-row">
+      <div class="pill"><span class="dot dot-pass"></span><span>{{ "{:,}".format(s.passed) }} limits confirmed</span></div>
+      <div class="pill"><span class="dot dot-err"></span><span>{{ "{:,}".format(s.errors) }} errors</span></div>
+      <div class="pill"><span class="dot dot-warn"></span><span>{{ "{:,}".format(s.warnings) }} warnings</span></div>
+      <div class="pill"><span class="dot dot-inc"></span><span>{{ "{:,}".format(s.incomplete) }} incomplete</span></div>
+    </div>
+
+    <div style="background:#f0f5ff;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:13px;color:#1a237e;line-height:1.7;">
+      {% if s.errors %}
+      <strong>What happens next:</strong> Your Oracle region operator will remediate all errors and re-run the validation suite. You will receive an updated report once the region achieves a passing status. No action is required from you at this time.
+      {% else %}
+      <strong>What happens next:</strong> No remediation is required. This certificate confirms your region's service limits match the approved manifest as of the validation run date above.
+      {% endif %}
+    </div>
+
+    <hr class="divider">
+    <div class="section-label">Your Oracle contacts</div>
+    {% for c in cfg.contacts %}
+    <div class="contact-row">
+      <div class="contact-avatar">{{ c.name.split()|map('first')|join|upper }}</div>
+      <div><div class="contact-name">{{ c.name }}</div><div class="contact-role">{{ c.role }}</div></div>
+      <a href="mailto:{{ c.email }}" class="contact-link">Email</a>
+    </div>
+    {% endfor %}
+    <div style="margin-top:14px;">
+      <div style="font-size:13px;color:#555;margin-bottom:6px;">Need to raise an issue directly?</div>
+      <a class="jira-btn" href="{{ cfg.jira_url }}" target="_blank">+ Create JIRA Ticket</a>
+    </div>
+
+    <div class="footer-note" style="margin-top:1.5rem;">Oracle DRCC Validation Agent · Confidential · For customer use only<br>This certificate will be reissued once all validation checks pass.</div>
   </div>
 </div>
 
 <script>
-function show(i){document.querySelectorAll('.template').forEach((t,j)=>t.classList.toggle('active',i===j));
-document.querySelectorAll('.nav-btn').forEach((b,j)=>b.classList.toggle('active',i===j));
-if(i===2) setTimeout(initCharts,100);}
-let chartsInit=false;
-function initCharts(){if(chartsInit)return;chartsInit=true;
-new Chart(document.getElementById('doughnutChart'),{type:'doughnut',data:{labels:['Pass','Error','Warning','Incomplete'],datasets:[{data:[{{ s.passed }},{{ s.errors }},{{ s.warnings }},{{ s.incomplete }}],backgroundColor:['#1e7e34','#c62828','#e65100','#cccccc'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},cutout:'65%'}});
-new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:{{ top_labels|tojson }},datasets:[{label:'Errors',data:{{ top_errors|tojson }},backgroundColor:'#c62828'},{label:'Warnings',data:{{ top_warnings|tojson }},backgroundColor:'#e65100'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true},y:{stacked:true}}}});}
-</script></body></html>
+function show(i) {
+  document.querySelectorAll('.template').forEach((t,j) => t.classList.toggle('active', i===j));
+  document.querySelectorAll('.nav-btn').forEach((b,j) => b.classList.toggle('active', i===j));
+  if (i===2) setTimeout(initCharts, 100);
+}
+
+// Set up download link with full page source
+(function(){
+  const src = '<!DOCTYPE html><html>' + document.documentElement.innerHTML + '</html>';
+  const blob = new Blob([src], {type: 'text/html'});
+  const url = URL.createObjectURL(blob);
+  document.getElementById('dlLink').href = url;
+})();
+
+let chartsInit = false;
+function initCharts() {
+  if (chartsInit) return;
+  chartsInit = true;
+
+  new Chart(document.getElementById('doughnutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pass', 'Error', 'Warning', 'Incomplete'],
+      datasets: [{
+        data: [{{ s.passed }}, {{ s.errors }}, {{ s.warnings }}, {{ s.incomplete }}],
+        backgroundColor: ['#1e7e34','#c62828','#e65100','#cccccc'],
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } } },
+      cutout: '65%'
+    }
+  });
+
+  new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ top_labels|tojson }},
+      datasets: [
+        { label: 'Errors', data: {{ top_errors|tojson }}, backgroundColor: '#c62828', borderRadius: 4 },
+        { label: 'Warnings', data: {{ top_warnings|tojson }}, backgroundColor: '#e65100', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 8 } } },
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 10 } }, grid: { display: false } },
+        y: { stacked: true, ticks: { font: { size: 10 } }, grid: { color: '#f0f0f0' } }
+      }
+    }
+  });
+}
+</script>
+</body></html>
