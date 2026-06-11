@@ -1,7 +1,8 @@
 """Live OCI integration test: validate limits and emit both reports.
 
 Marked 'integration' — requires OCI auth (dev config profile or prod RP).
-Reports are written even when assertions fail, via the always-run fixture.
+The module-scoped `summary` fixture runs the validation, which writes the
+reports to `artifacts_dir()/reports/` as a side effect before assertions run.
 """
 import pytest
 
