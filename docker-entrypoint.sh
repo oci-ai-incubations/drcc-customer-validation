@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -eu
 
 # Resources (manifest/config) load via paths relative to /app. The prod
 # framework sets the container working dir to the workspace dir, so reset CWD
@@ -10,4 +10,4 @@ cd /app
 BASE="${GENERIC_TESTS_WORKSPACE_DIR:-${OUTPUT_DIR:-output}}"
 mkdir -p "$BASE/reports" "$BASE/logs"
 
-exec pytest -v -m integration --junitxml="$BASE/logs/results.xml"
+exec python -m pytest -v -m integration --junitxml="$BASE/logs/results.xml"
