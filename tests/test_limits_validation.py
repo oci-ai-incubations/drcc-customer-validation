@@ -3,26 +3,24 @@
 Marked 'integration' — requires OCI auth (dev config profile or prod RP).
 Reports are written even when assertions fail, via the always-run fixture.
 """
-import os
-from pathlib import Path
-
 import pytest
 
 from drcc_validation.cli import run_validation
+from drcc_validation.paths import artifacts_dir, reports_dir
 
-OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "output"))
+BASE = artifacts_dir()
 
 
 @pytest.fixture(scope="module")
 def summary():
-    return run_validation(OUTPUT_DIR)
+    return run_validation(BASE)
 
 
 @pytest.mark.integration
 def test_reports_are_generated(summary):
-    assert (OUTPUT_DIR / "DRCC-Region-Readiness-Report.html").exists()
-    assert (OUTPUT_DIR / "DRCC-Region-Readiness-Report.pdf").exists()
-    assert (OUTPUT_DIR / "Validation-Limits-Report.pdf").exists()
+    assert (reports_dir() / "DRCC-Region-Readiness-Report.html").exists()
+    assert (reports_dir() / "DRCC-Region-Readiness-Report.pdf").exists()
+    assert (reports_dir() / "Validation-Limits-Report.pdf").exists()
 
 
 @pytest.mark.integration
