@@ -15,10 +15,13 @@ COPY manifest/ ./manifest/
 COPY config/ ./config/
 COPY pytest.ini .
 COPY tests/ ./tests/
+COPY docker-entrypoint.sh .
+RUN chmod +x /app/docker-entrypoint.sh
 
 ENV PYTHONPATH=/app/src
 ENV OCI_ENV=dev
 ENV OUTPUT_DIR=/app/output
 
-# Run the full suite incl. the live integration test; emit JUnit + reports.
-CMD ["pytest", "-v", "-m", "integration", "--junitxml=/app/output/results.xml"]
+# Entrypoint resolves the artifacts base (workspace dir in prod), creates
+# reports/ + logs/, and runs the live integration suite emitting JUnit + reports.
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
