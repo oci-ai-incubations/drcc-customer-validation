@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .auth import build_limits_client, build_oci_context
 from .config import load_report_config
+from .paths import artifacts_dir
 from .limits_client import fetch_live_limits_with_status, unique_services
 from .manifest import load_manifest
 from .reports.readiness import render_readiness_html, render_readiness_pdf
@@ -30,8 +31,8 @@ DEFAULT_CONFIG = "config/report_config.yaml"
 def run_validation(
     output_dir, manifest_path=DEFAULT_MANIFEST, config_path=DEFAULT_CONFIG
 ) -> ValidationSummary:
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    reports = Path(output_dir) / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
 
     ctx = build_oci_context()
     logger.info("Auth ready: tenancy=%s region=%s", ctx.tenancy_id, ctx.region)
@@ -66,17 +67,17 @@ def run_validation(
         services_completed=f"{len(services)}/{len(services)}",
     )
 
-    render_readiness_html(summary, cfg, output_dir / "DRCC-Region-Readiness-Report.html")
-    render_readiness_pdf(summary, cfg, output_dir / "DRCC-Region-Readiness-Report.pdf")
-    render_validate_limits_pdf(summary, meta, output_dir / "Validation-Limits-Report.pdf")
-    render_validate_limits_html(summary, meta, output_dir / "Validation-Limits-Report.html")
-    logger.info("Reports written to %s", output_dir)
+    render_readiness_html(summary, cfg, reports / "DRCC-Region-Readiness-Report.html")
+    render_readiness_pdf(summary, cfg, reports / "DRCC-Region-Readiness-Report.pdf")
+    render_validate_limits_pdf(summary, meta, reports / "Validation-Limits-Report.pdf")
+    render_validate_limits_html(summary, meta, reports / "Validation-Limits-Report.html")
+    logger.info("Reports written to %s", reports)
     return summary
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="DRCC service limits validation")
-    parser.add_argument("--output", default=os.environ.get("OUTPUT_DIR", "output"))
+    parser.add_argument("--output", default=str(artifacts_dir()))
     parser.add_argument("--manifest", default=os.environ.get("MANIFEST_PATH", DEFAULT_MANIFEST))
     parser.add_argument("--config", default=os.environ.get("CONFIG_PATH", DEFAULT_CONFIG))
     args = parser.parse_args()

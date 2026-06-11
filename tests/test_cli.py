@@ -25,8 +25,9 @@ def test_run_validation_produces_reports(tmp_path, monkeypatch):
     summary = cli.run_validation(output_dir=tmp_path, manifest_path="x", config_path="y")
 
     assert summary.errors == 1
-    assert (tmp_path / "DRCC-Region-Readiness-Report.html").exists()
-    assert (tmp_path / "DRCC-Region-Readiness-Report.pdf").exists()
-    assert (tmp_path / "Validation-Limits-Report.pdf").exists()
-    assert (tmp_path / "Validation-Limits-Report.html").exists()
+    reports = tmp_path / "reports"
+    assert (reports / "DRCC-Region-Readiness-Report.html").exists()
+    assert (reports / "DRCC-Region-Readiness-Report.pdf").exists()
+    assert (reports / "Validation-Limits-Report.pdf").exists()
+    assert (reports / "Validation-Limits-Report.html").exists()
     assert captured.get("run_date"), "run_date must be passed as a non-empty string"
