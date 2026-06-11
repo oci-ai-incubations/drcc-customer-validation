@@ -90,19 +90,19 @@ Both files contain a single comment line: `# package marker`
 - [ ] **Step 6: Create `config/report_config.yaml`**
 
 ```yaml
-customer_name: "Claro Embratel"
+customer_name: "Example Customer"
 region_label: ""          # blank → auto-filled from detected OCI region
 ga_target_date: "TBD"
 validation_run_date: ""   # blank → filled by CLI at run time
 jira_url: "https://jira.oraclecloud.com/secure/CreateIssue.jspa"
 strict: false             # true → pytest fails the build when errors > 0
 contacts:
-  - name: "Mas Hirose"
+  - name: "Primary Contact"
     role: "OCI Region Operator · Primary Contact"
-    email: "mas.hirose@oracle.com"
-  - name: "Sai Keerthan Kilari"
+    email: "primary.contact@example.com"
+  - name: "Secondary Contact"
     role: "OCI Region Operator · Secondary Contact"
-    email: "sai.kilari@oracle.com"
+    email: "secondary.contact@example.com"
 ```
 
 - [ ] **Step 7: Create local dev venv and install deps**
