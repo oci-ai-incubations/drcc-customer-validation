@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 from collections import OrderedDict
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -47,7 +48,7 @@ def outcome_status(when: str, outcome: str) -> str | None:
 class EventRecorder:
     """Accumulates test events and atomically rewrites the JSON file on change."""
 
-    def __init__(self, path, now=_utc_now_iso):
+    def __init__(self, path: str | os.PathLike, now: Callable[[], str] = _utc_now_iso):
         self._path = Path(path)
         self._now = now
         # category -> testName -> event dict
@@ -81,6 +82,11 @@ class EventRecorder:
         }
 
     def _event(self, nodeid: str) -> dict:
+        """Return the live (mutable) event dict for this nodeid, creating it if new.
+
+        Callers mutate it in place; to_dict()/_ordered() copy into fresh dicts
+        for output, so the stored object is never aliased externally.
+        """
         category, test_name = _split_nodeid(nodeid)
         tests = self._events.setdefault(category, OrderedDict())
         return tests.setdefault(test_name, {"testName": test_name})
