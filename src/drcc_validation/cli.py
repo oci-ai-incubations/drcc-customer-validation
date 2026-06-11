@@ -9,9 +9,9 @@ from pathlib import Path
 
 from .auth import build_limits_client, build_oci_context
 from .config import load_report_config
-from .paths import artifacts_dir
 from .limits_client import fetch_live_limits_with_status, unique_services
 from .manifest import load_manifest
+from .paths import artifacts_dir
 from .reports.readiness import render_readiness_html, render_readiness_pdf
 from .reports.validate_limits_report import (
     RunMetadata,
@@ -31,8 +31,8 @@ DEFAULT_CONFIG = "config/report_config.yaml"
 def run_validation(
     output_dir, manifest_path=DEFAULT_MANIFEST, config_path=DEFAULT_CONFIG
 ) -> ValidationSummary:
-    reports = Path(output_dir) / "reports"
-    reports.mkdir(parents=True, exist_ok=True)
+    reports_dir = Path(output_dir) / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
 
     ctx = build_oci_context()
     logger.info("Auth ready: tenancy=%s region=%s", ctx.tenancy_id, ctx.region)
@@ -67,16 +67,18 @@ def run_validation(
         services_completed=f"{len(services)}/{len(services)}",
     )
 
-    render_readiness_html(summary, cfg, reports / "DRCC-Region-Readiness-Report.html")
-    render_readiness_pdf(summary, cfg, reports / "DRCC-Region-Readiness-Report.pdf")
-    render_validate_limits_pdf(summary, meta, reports / "Validation-Limits-Report.pdf")
-    render_validate_limits_html(summary, meta, reports / "Validation-Limits-Report.html")
-    logger.info("Reports written to %s", reports)
+    render_readiness_html(summary, cfg, reports_dir / "DRCC-Region-Readiness-Report.html")
+    render_readiness_pdf(summary, cfg, reports_dir / "DRCC-Region-Readiness-Report.pdf")
+    render_validate_limits_pdf(summary, meta, reports_dir / "Validation-Limits-Report.pdf")
+    render_validate_limits_html(summary, meta, reports_dir / "Validation-Limits-Report.html")
+    logger.info("Reports written to %s", reports_dir)
     return summary
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="DRCC service limits validation")
+    # str(): argparse default must be a string; artifacts_dir() returns a Path
+    # and resolves the prod workspace dir (GENERIC_TESTS_WORKSPACE_DIR) when set.
     parser.add_argument("--output", default=str(artifacts_dir()))
     parser.add_argument("--manifest", default=os.environ.get("MANIFEST_PATH", DEFAULT_MANIFEST))
     parser.add_argument("--config", default=os.environ.get("CONFIG_PATH", DEFAULT_CONFIG))
