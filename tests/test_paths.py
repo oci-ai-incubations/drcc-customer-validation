@@ -31,3 +31,9 @@ def test_reports_and_logs_subdirs(monkeypatch):
     monkeypatch.setenv("GENERIC_TESTS_WORKSPACE_DIR", "/workspace/job1")
     assert paths.reports_dir() == Path("/workspace/job1/reports")
     assert paths.logs_dir() == Path("/workspace/job1/logs")
+
+
+def test_empty_output_dir_falls_back(monkeypatch):
+    monkeypatch.delenv("GENERIC_TESTS_WORKSPACE_DIR", raising=False)
+    monkeypatch.setenv("OUTPUT_DIR", "")
+    assert paths.artifacts_dir() == Path("output")

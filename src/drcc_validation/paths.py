@@ -13,11 +13,12 @@ from pathlib import Path
 
 def artifacts_dir() -> Path:
     """Base directory for all run artifacts."""
-    return Path(
+    base = (
         os.environ.get("GENERIC_TESTS_WORKSPACE_DIR")
         or os.environ.get("OUTPUT_DIR")
         or "output"
     )
+    return Path(base)
 
 
 def reports_dir() -> Path:
