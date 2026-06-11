@@ -1,0 +1,99 @@
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; }
+
+  .nav { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 0 2rem; display: flex; gap: 0; position: sticky; top: 0; z-index: 100; }
+  .nav-btn { padding: 1rem 1.25rem; font-size: 13px; border: none; background: none; cursor: pointer; color: #666; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .nav-btn.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 500; }
+  .nav-btn:hover { color: #1a1a1a; }
+
+  .dl-bar { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 0.6rem 2rem; display: flex; justify-content: flex-end; }
+  .dl-btn { font-size: 12px; padding: 5px 14px; border: 1px solid #d0d0d0; border-radius: 6px; background: #fff; cursor: pointer; color: #444; display: flex; align-items: center; gap: 6px; text-decoration: none; }
+  .dl-btn:hover { background: #f5f5f5; }
+
+  .template { display: none; padding: 2rem; max-width: 860px; margin: 0 auto; }
+  .template.active { display: block; }
+
+  /* shared components */
+  .report-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem; }
+  .report-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+  .report-title { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+  .report-sub { font-size: 13px; color: #777; margin-top: 3px; }
+  .oracle-logo { font-size: 13px; font-weight: 600; color: #C74634; letter-spacing: -0.3px; }
+
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
+  .badge-pass { background: #e6f4ec; color: #1e7e34; }
+  .badge-warn { background: #fff3e0; color: #e65100; }
+  .badge-err { background: #fdecea; color: #c62828; }
+  .badge-inc { background: #f0f0f0; color: #666; }
+  .badge-cert { background: #e3f2fd; color: #1565c0; }
+
+  .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .meta-cell { background: #fafafa; border: 1px solid #efefef; border-radius: 8px; padding: 0.7rem 1rem; }
+  .meta-key { font-size: 11px; color: #999; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .meta-val { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+
+  .metric-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .metric { background: #fafafa; border-radius: 8px; padding: 1rem; border: 1px solid #efefef; }
+  .metric .ml { font-size: 12px; color: #999; margin-bottom: 4px; }
+  .metric .mv { font-size: 26px; font-weight: 600; }
+  .c-pass { color: #1e7e34; }
+  .c-warn { color: #e65100; }
+  .c-err { color: #c62828; }
+  .c-inc { color: #888; }
+
+  .verdict { border-left: 4px solid; border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; font-size: 14px; line-height: 1.7; margin-bottom: 1.5rem; }
+  .verdict-warn { border-color: #e65100; background: #fff8f3; color: #5d2a00; }
+  .verdict-pass { border-color: #1e7e34; background: #f0faf3; color: #0a3d1a; }
+
+  .svc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .svc-table th { text-align: left; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #999; border-bottom: 1px solid #e5e5e5; font-weight: 500; }
+  .svc-table td { padding: 9px 10px; border-bottom: 1px solid #f0f0f0; color: #333; }
+  .svc-table tr:last-child td { border-bottom: none; }
+
+  .prog-bar { height: 5px; border-radius: 99px; background: #efefef; overflow: hidden; width: 80px; }
+  .prog-fill { height: 100%; border-radius: 99px; }
+
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #999; margin-bottom: 10px; }
+
+  .contact-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+  .contact-row:last-child { border-bottom: none; }
+  .contact-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e8eaf6; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #3949ab; flex-shrink: 0; }
+  .contact-name { font-size: 14px; font-weight: 500; }
+  .contact-role { font-size: 12px; color: #888; }
+  .contact-link { margin-left: auto; font-size: 12px; color: #1565c0; text-decoration: none; border: 1px solid #c9dcf5; border-radius: 6px; padding: 4px 10px; }
+  .contact-link:hover { background: #e3f2fd; }
+
+  .jira-btn { display: inline-flex; align-items: center; gap: 8px; background: #0052cc; color: #fff; text-decoration: none; font-size: 13px; font-weight: 500; padding: 8px 18px; border-radius: 6px; margin-top: 12px; }
+  .jira-btn:hover { background: #0747a6; }
+
+  .divider { border: none; border-top: 1px solid #efefef; margin: 1.25rem 0; }
+
+  .legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 1.25rem; font-size: 13px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-pass { background: #1e7e34; }
+  .dot-warn { background: #e65100; }
+  .dot-err { background: #c62828; }
+  .dot-inc { background: #bbb; }
+
+  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .pill { display: flex; align-items: center; gap: 6px; font-size: 13px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 99px; padding: 4px 12px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 580px) {
+    .metric-row { grid-template-columns: repeat(2, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .nav-btn { padding: 1rem 0.75rem; font-size: 12px; }
+  }
+
+  /* chart container */
+  .chart-wrap { position: relative; margin-bottom: 1.5rem; }
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+  @media (max-width: 580px) { .chart-grid { grid-template-columns: 1fr; } }
+
+  /* cert template */
+  .cert-stamp { text-align: center; padding: 2rem 1rem; }
+  .cert-seal { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #e65100; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+  .cert-seal svg { width: 32px; height: 32px; }
+
+  .footer-note { font-size: 11px; color: #bbb; text-align: center; margin-top: 1rem; }
