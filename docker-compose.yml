@@ -1,0 +1,12 @@
+services:
+  validate:
+    build: .
+    environment:
+      OCI_ENV: ${OCI_ENV:-dev}
+      OCI_PROFILE: ${OCI_PROFILE:-DEFAULT}
+      REPORT_CUSTOMER_NAME: ${REPORT_CUSTOMER_NAME:-}
+      REPORT_GA_TARGET_DATE: ${REPORT_GA_TARGET_DATE:-}
+      REPORT_STRICT: ${REPORT_STRICT:-false}
+    volumes:
+      - ~/.oci:/root/.oci:ro          # dev: API-key profile (see README caveat)
+      - ./output:/app/output          # reports land here
