@@ -40,3 +40,9 @@ def test_env_overrides_win(tmp_path, monkeypatch):
 def test_validation_run_date_filled_when_blank(tmp_path):
     cfg = load_report_config(_write(tmp_path, YAML), run_date="June 10, 2026")
     assert cfg.validation_run_date == "June 10, 2026"
+
+def test_empty_env_falls_back_to_yaml(tmp_path, monkeypatch):
+    """Empty-string env var must not win over the YAML value."""
+    monkeypatch.setenv("REPORT_CUSTOMER_NAME", "")
+    cfg = load_report_config(_write(tmp_path, YAML))
+    assert cfg.customer_name == "Acme Corp"

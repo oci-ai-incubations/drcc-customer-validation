@@ -52,3 +52,25 @@ def test_fetch_skips_values_with_none_value(monkeypatch):
     client = FakeClient(client_values)
     out = fetch_live_limits(client, "t", ["empty"])
     assert out == []
+
+
+def test_request_exception_degrades_to_incomplete(monkeypatch):
+    """A RequestException for one service must be swallowed; good services still return data."""
+    import drcc_validation.limits_client as lc
+    import oci
+
+    good_data = [
+        SimpleNamespace(name="subnets", scope_type="REGION", availability_domain=None, value=5),
+    ]
+
+    def pager_with_error(list_func, compartment_id, service_name=None, **kwargs):
+        if service_name == "vcn":
+            return SimpleNamespace(data=good_data)
+        raise oci.exceptions.RequestException("simulated network failure")
+
+    monkeypatch.setattr(lc.oci.pagination, "list_call_get_all_results", pager_with_error)
+    client = FakeClient(client_values)
+    out = fetch_live_limits(client, "ocid1.tenancy..t", ["compute", "vcn"])
+    # The failing "compute" service must be skipped — no exception propagates
+    assert LiveLimitValue("vcn", "subnets", "REGION", None, 5) in out
+    assert all(r.service == "vcn" for r in out)

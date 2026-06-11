@@ -30,7 +30,7 @@ def fetch_live_limits(
                 compartment_id,
                 service_name=service,
             )
-        except oci.exceptions.ServiceError as exc:
+        except (oci.exceptions.ServiceError, oci.exceptions.RequestException) as exc:
             logger.warning("Failed to fetch limits for %s: %s", service, exc)
             continue
         for item in resp.data:

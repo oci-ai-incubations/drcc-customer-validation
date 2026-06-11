@@ -40,7 +40,10 @@ def load_report_config(
     data = yaml.safe_load(Path(path).read_text()) or {}
 
     def pick(key: str, env: str, default: str = "") -> str:
-        return os.environ.get(env, data.get(key) or default)
+        val = os.environ.get(env)
+        if val and val.strip():
+            return val
+        return data.get(key) or default
 
     region_label = pick("region_label", "REPORT_REGION_LABEL")
     if not region_label and region_default:

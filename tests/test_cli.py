@@ -10,7 +10,11 @@ def test_run_validation_produces_reports(tmp_path, monkeypatch):
     cfg = ReportConfig("Acme", "us-ashburn-1", "May 8", "June 10", "http://j", False, [])
 
     monkeypatch.setattr(cli, "load_manifest", lambda p: manifest)
-    monkeypatch.setattr(cli, "load_report_config", lambda *a, **k: cfg)
+    captured = {}
+    def fake_load_config(*a, **k):
+        captured.update(k)
+        return cfg
+    monkeypatch.setattr(cli, "load_report_config", fake_load_config)
 
     class Ctx:
         config = {}; signer = None; tenancy_id = "ocid1.tenancy..t"; region = "us-ashburn-1"
@@ -24,3 +28,4 @@ def test_run_validation_produces_reports(tmp_path, monkeypatch):
     assert (tmp_path / "DRCC-Region-Readiness-Report.html").exists()
     assert (tmp_path / "DRCC-Region-Readiness-Report.pdf").exists()
     assert (tmp_path / "Validation-Limits-Report.pdf").exists()
+    assert captured.get("run_date"), "run_date must be passed as a non-empty string"

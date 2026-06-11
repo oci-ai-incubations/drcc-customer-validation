@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import logging
 import os
 from pathlib import Path
@@ -31,7 +32,8 @@ def run_validation(
     logger.info("Auth ready: tenancy=%s region=%s", ctx.tenancy_id, ctx.region)
 
     manifest = load_manifest(manifest_path)
-    cfg = load_report_config(config_path, region_default=ctx.region)
+    run_date = datetime.date.today().strftime("%B %d, %Y")
+    cfg = load_report_config(config_path, region_default=ctx.region, run_date=run_date)
     logger.info("Loaded %d manifest limits across %d services",
                 len(manifest), len(unique_services(manifest)))
 
